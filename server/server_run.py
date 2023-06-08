@@ -9,7 +9,7 @@ PORT = 65432  # Port to listen on (non-privileged ports are > 1023)
 CONN_BACKLOG_SIZE = 10
 
 server = Server(HOST, PORT, CONN_BACKLOG_SIZE)
-interface = Interface(server.recieveQueue, server.sendQueues, server.sendQueuesLock)
+interface = Interface(server.recieveQueue, server.sendQueues, server.sendQueuesLock, server.removeQueue)
 
 while True:
     print("[0] Quit\n")

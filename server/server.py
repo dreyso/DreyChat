@@ -25,6 +25,7 @@ class Server(threading.Thread):
         self.recieveQueue: queue.Queue = queue.Queue()    # Queue of pairs, {id, message}
         self.sendQueuesLock: threading.Lock = threading.Lock()
         self.sendQueues: Dict[int, queue.Queue] = {}    # dict: key = id, value = queue
+        self.removeQueue: queue.Queue = queue.Queue()
 
         self.start()
 
@@ -35,6 +36,7 @@ class Server(threading.Thread):
         # Remove from interface
         self.sendQueuesLock.acquire()
         del self.sendQueues[id(socket)]
+        self.removeQueue.put(id(socket), block=True, timeout=None)
         self.sendQueuesLock.release()
 
         # Remove socket

@@ -4,7 +4,7 @@ import codes
 from typing import Dict, Any, List, Optional, Tuple
 
 class Interface(threading.Thread):
-    def __init__(self, recvQueue: queue.Queue, sendQueues: Dict[int, queue.Queue], sendQueuesLock: threading.Lock):
+    def __init__(self, recvQueue: queue.Queue, sendQueues: Dict[int, queue.Queue], sendQueuesLock: threading.Lock, removeQueue: queue.Queue):
         threading.Thread.__init__(self)
 
         # Let main thread signal when to close server
@@ -13,6 +13,8 @@ class Interface(threading.Thread):
         self.recvQueue: queue.Queue = recvQueue    # Queue of pairs, {id, message}
         self.sendQueuesLock: threading.Lock = sendQueuesLock
         self.sendQueues: Dict[int, queue.Queue] = sendQueues    # dict: key = id, value = queue
+        self.removeQueue: queue.Queue = removeQueue
+
 
         # username -> id
         self.userIDs: Dict[str, int] = {}
@@ -39,23 +41,24 @@ class Interface(threading.Thread):
 
     # Must hold the lock
     def clean(self) -> None:
-        # Collect all old data
-        toDelete: List[int] = []
-        for userID in self.usernames:
-            # Check if ID to name mapping is still valid
-            if userID not in self.sendQueues:
-                toDelete.append(userID)
-        
-        # Clear old user's data
-        for userID in toDelete:
-            del self.userIDs[self.usernames[userID]]
-            del self.usernames[userID]
-            del self.userChannels[userID]
+        while True:
+            userID = None
+            try:
+                # Check if any user's disconnected
+                userID = self.removeQueue.get_nowait()
+            except queue.Empty:
+                break
+            else:
+                # Clear old user's data
+                del self.userIDs[self.usernames[userID]]
+                del self.usernames[userID]
+                del self.userChannels[userID]
 
-            for userIDs in self.channels.values():
-                if userID in userIDs:
-                    userIDs.remove(userID)
-        
+                for userIDs in self.channels.values():
+                    if userID in userIDs:
+                        userIDs.remove(userID)
+
+    def registerNewUsers(self) -> None:
         # Init new users
         for userID in self.sendQueues:
             # Check if user has a name mapping
@@ -69,6 +72,7 @@ class Interface(threading.Thread):
         
         self.sendQueuesLock.acquire()
         self.clean()
+        self.registerNewUsers()
 
         # Check if requester is still online
         if senderID not in self.sendQueues:

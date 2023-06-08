@@ -27,7 +27,7 @@ class Interface(threading.Thread):
         while not self._closing.is_set():
             message = None
             try:
-                message: bytes = self.recvQueue.get(block=True, timeout=WAIT_INTERVAL)
+                message = self.recvQueue.get(block=True, timeout=WAIT_INTERVAL)
             except queue.Empty:
                 pass
             else:
@@ -133,7 +133,7 @@ class Interface(threading.Thread):
         while True:
             message = None
             try:
-                message: bytes = self.inbox.get_nowait()
+                message = self.inbox.get_nowait()
             except queue.Empty:
                 break
             else:
