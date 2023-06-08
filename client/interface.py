@@ -41,15 +41,17 @@ class Interface(threading.Thread):
         self._closing.set()
 
     def displayMenu(self):
-        print("[1] Message\n[2] Join/Leave Channels\n[3] Create/Delete Channel\n[4] List Channels\n[5] List My Channels\n[6] List Channel Users\n[7] List Users\n[8] Set Name\n")
+        print("[1] Message\n[2] Join/Leave Channels\n[3] Create/Delete Channel\n[4] List Channels\n[5] List My Channels\n[6] List Channel Users\n[7] List Users\n[8] Set Name")
             
     def choose(self, choice: int):
+        print("")
         match choice:
             # Message
             case '1':
                 while choice != '0':
                     print("[0] Back\n[1] Message User\n[2] Message My Channels\n[3] Message Channels\n")
                     choice = input("[]<-")
+                    print("")
 
                     match choice:
                         # Back
@@ -73,6 +75,7 @@ class Interface(threading.Thread):
                 while choice != '0':
                     print("[0] Back\n[1] Join Channels\n[2] Leave Channels\n")
                     choice = input("[]<-")
+                    print("")
 
                     match choice:
                         # Back
@@ -93,6 +96,7 @@ class Interface(threading.Thread):
                 while choice != '0':
                     print("[0] Back\n[1] Create Channel\n[2] Delete Channel\n")
                     choice = input("[]<-")
+                    print("")
 
                     match choice:
                         # Back
@@ -144,7 +148,7 @@ class Interface(threading.Thread):
     def getReply(self):
         replyTokens = self.replyQueue.get(block=True, timeout=WAIT_INTERVAL)
         assert replyTokens[0] == codes.ERROR or replyTokens[0] == codes.SUCCESS
-        print(replyTokens[1])
+        print("\nDreychat:\n" + replyTokens[1])
 
     def messageUser(self):
         name: str = input("Username: ") 

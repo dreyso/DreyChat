@@ -94,29 +94,35 @@ class Interface(threading.Thread):
                     self.userIDs[tokens[1]] = senderID
                     self.usernames[senderID] = tokens[1]
 
-                    reply = codes.pack([codes.SUCCESS, "Name changed.\n"])
+                    reply = codes.pack([codes.SUCCESS, "Name changed to " + tokens[1] + ".\n"])
 
             case codes.MESSAGE_USER:
                 # Retrieve recipient ID
                 if tokens[1] not in self.userIDs:
-                    reply = codes.pack([codes.ERROR, "No such user exists."])
+                    reply = codes.pack([codes.ERROR, "User " + tokens[1] + " does not exist.\n"])
+                # Don't message the sender
+                elif self.userIDs[tokens[1]] == senderID:
+                    reply = codes.pack([codes.ERROR, "Cannot message yourself.\n"])
                 else:
                     recipientID = self.userIDs[tokens[1]]
                     message = codes.pack([codes.INBOX, tokens[2]])
                     # Add message to recipient's queue
                     self.sendQueues[recipientID].put(message)
     
-                    reply = codes.pack([codes.SUCCESS, "User messaged."])
+                    reply = codes.pack([codes.SUCCESS, "Message sent.\n"])
 
             case codes.MESSAGE_MY_CHANNELS:
                 # Check if sender is in any channels
-                if len(self.userChannels[senderID]) == 0:
+                if not self.userChannels[senderID]:
                     reply = codes.pack([codes.ERROR, "You aren't in any channels.\n"])
                 else:
                     channelNames = self.userChannels[senderID]
 
                     for channelName in channelNames:
                         for recipientID in self.channels[channelName]:
+                                # Don't message the sender
+                                if recipientID == senderID:
+                                    continue
                                 # Add message to recipient's queue
                                 self.sendQueues[recipientID].put(tokens[-1])
                                 
@@ -128,6 +134,9 @@ class Interface(threading.Thread):
                         reply = reply + channelName + " does not exist.\n"
                     else:
                         for recipientID in self.channels[channelName]:
+                            # Don't message the sender
+                            if recipientID == senderID:
+                                continue
                             # Add message to recipient's queue
                             self.sendQueues[recipientID].put(tokens[-1])
                 
@@ -142,7 +151,7 @@ class Interface(threading.Thread):
                         reply = reply + channelName + " does not exist.\n"
                     # Check if sender is already in the channel
                     elif senderID in self.channels[channelName]:
-                        reply = reply + "You are already listening to" + channelName + ".\n"
+                        reply = reply + "You are already listening to " + channelName + ".\n"
                     else:
                         self.channels[channelName].append(senderID)
                         self.userChannels[senderID].append(channelName)
@@ -150,7 +159,7 @@ class Interface(threading.Thread):
                 if reply != "":
                     reply = codes.pack([codes.ERROR, reply])
                 else:
-                    reply = codes.pack([codes.SUCCESS, "Channels joined.\n"])
+                    reply = codes.pack([codes.SUCCESS, "Joined Channel(s).\n"])
 
             case codes.LEAVE_CHANNELS:
                 for channelName in tokens[1:]:
@@ -163,7 +172,7 @@ class Interface(threading.Thread):
                 if reply != "":
                     reply = codes.pack([codes.ERROR, reply])
                 else:
-                    reply = codes.pack([codes.SUCCESS, "Left Channels.\n"])
+                    reply = codes.pack([codes.SUCCESS, "Left Channel(s).\n"])
 
             case codes.CREATE_CHANNEL:
                 # Check if specified channel name already exists
@@ -174,7 +183,7 @@ class Interface(threading.Thread):
                 # Create and join channel
                 else:
                     self.channels[channelName] = [senderID]
-                    self.userChannels[senderID] = [channelName]
+                    self.userChannels[senderID].append(channelName)
                     reply = codes.pack([codes.SUCCESS, "Channel created.\n"])
 
             case codes.DELETE_CHANNEL:
@@ -190,8 +199,8 @@ class Interface(threading.Thread):
                     reply = codes.pack([codes.SUCCESS, "Channel deleted.\n"])
 
             case codes.LIST_CHANNELS:
-                for channel in self.channels:
-                    reply = reply + channel + "\n"
+                for count, channel in enumerate(self.channels):
+                    reply = reply + str(count + 1) + ". " + channel + "\n"
 
                 if reply == "":
                     reply = codes.pack([codes.ERROR, "No channels exist.\n"])
@@ -199,8 +208,8 @@ class Interface(threading.Thread):
                     reply = codes.pack([codes.SUCCESS, reply])
 
             case codes.LIST_MY_CHANNELS:
-                for channelName in self.userChannels[senderID]:
-                    reply = reply + channelName + "\n"
+                for count, channelName in enumerate(self.userChannels[senderID]):
+                    reply = reply + str(count + 1) + ". " + channelName + "\n"
 
                 if reply == "":
                     reply = codes.pack([codes.ERROR, "You are not listening to any channels.\n"])
@@ -211,20 +220,21 @@ class Interface(threading.Thread):
                 # Check if specified channel name exists
                 channelName = tokens[1]
                 if channelName not in self.channels:
-                    reply = codes.pack([codes.ERROR, channelName + "does not exist.\n"])
+                    reply = codes.pack([codes.ERROR, channelName + " does not exist.\n"])
                 else:
-                    for userID in self.channels[channelName]:
-                        reply = reply + self.usernames[userID] + "\n"
-                    
+                    count: int = 1
+                    for count, userID in enumerate(self.channels[channelName]):
+                        reply = reply + str(count + 1) + ". " + self.usernames[userID] + "\n"
+                        
                     if reply == "":
                         reply = codes.pack([codes.ERROR, channelName + " is empty.\n"])
                     else:
                         reply = codes.pack([codes.SUCCESS, reply])
             
             case codes.LIST_USERS:
-                for userID in self.sendQueues:
-                    reply = reply + self.usernames[userID] + "\n"
-
+                for count, userID in enumerate(self.sendQueues):
+                    reply = reply + str(count + 1) + ". " + self.usernames[userID] + "\n"
+                
                 reply = codes.pack([codes.SUCCESS, reply])
 
             # Invalid

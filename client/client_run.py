@@ -20,7 +20,7 @@ if client.connect() == False:
     print('Failed to connect to server.')
 else:
     while client.is_alive():
-        print("[0] Quit\n")
+        print("[0] Quit")
         interface.displayMenu()
 
         userInput = input("[]<-")
