@@ -41,7 +41,7 @@ class Interface(threading.Thread):
         self._closing.set()
 
     def displayMenu(self):
-        print("[1] Message\n[2] Join/Leave Channels\n[3] Create/Delete Channel\n[4] List Channels\n[5] List My Channels\n[6] List Channel Users\n[7] List Users\n[8] Set Name")
+        print("[1] Message\n[2] Join/Leave Channels\n[3] Create/Delete Channel\n[4] List Channels\n[5] List My Channels\n[6] List Channel Users\n[7] List Users\n[8] Set Name\n[9] Empty Inbox")
             
     def choose(self, choice: int):
         print("")
@@ -133,25 +133,13 @@ class Interface(threading.Thread):
             case _:
                 print("Invalid Choice\n")
     
-    def emptyInbox(self):
-        while True:
-            message = None
-            try:
-                message = self.inbox.get_nowait()
-            except queue.Empty:
-                break
-            else:
-                tokens: List = codes.unpack(message)
-                assert tokens[0] == codes.INBOX
-                print(tokens[1])
-
     def getReply(self):
         replyTokens = self.replyQueue.get(block=True, timeout=WAIT_INTERVAL)
         assert replyTokens[0] == codes.ERROR or replyTokens[0] == codes.SUCCESS
         print("\nDreychat:\n" + replyTokens[1])
 
     def messageUser(self):
-        name: str = input("Username: ") 
+        name: str = codes.getLabel("Username: ") 
         message: str = input("Message: ")  
         request: bytes = codes.pack([codes.MESSAGE_USER, name, message])
         self.sendQueue.put(request, block=True, timeout=WAIT_INTERVAL)
@@ -168,7 +156,7 @@ class Interface(threading.Thread):
     def messageChannels(self):
         reqTokens: List = [codes.MESSAGE_CHANNELS]
         while True:
-            channel: str = input("Channel name:")
+            channel: str = codes.getLabels("Channel name:")
             if channel == "":
                 break
             reqTokens.append(channel)
@@ -176,6 +164,7 @@ class Interface(threading.Thread):
         if len(reqTokens) == 1:
             return
         
+        reqTokens.append(input("Message: "))
         request = codes.pack(reqTokens)
         self.sendQueue.put(request, block=True, timeout=WAIT_INTERVAL)
 
@@ -184,7 +173,7 @@ class Interface(threading.Thread):
     def joinChannels(self):
         reqTokens: List = [codes.JOIN_CHANNELS]
         while True:
-            channel: str = input("Channel name:")
+            channel: str = codes.getLabels("Channel name:")
             if channel == "":
                 break
             reqTokens.append(channel)
@@ -200,7 +189,7 @@ class Interface(threading.Thread):
     def leaveChannels(self):
         reqTokens: List = [codes.LEAVE_CHANNELS]
         while True:
-            channel: str = input("Channel name:")
+            channel: str = codes.getLabels("Channel name:")
             if channel == "":
                 break
             reqTokens.append(channel)
@@ -214,14 +203,14 @@ class Interface(threading.Thread):
         self.getReply()
 
     def createChannel(self):
-        channelName: str = input("Channel Name: ")   
+        channelName: str = codes.getLabel("Channel Name: ")
         request: bytes = codes.pack([codes.CREATE_CHANNEL, channelName])
         self.sendQueue.put(request, block=True, timeout=WAIT_INTERVAL)
 
         self.getReply()
 
     def deleteChannel(self):
-        channelName: str = input("Channel Name: ")   
+        channelName: str = codes.getLabel("Channel Name: ")   
         request: bytes = codes.pack([codes.DELETE_CHANNEL, channelName])
         self.sendQueue.put(request, block=True, timeout=WAIT_INTERVAL)
 
@@ -240,7 +229,7 @@ class Interface(threading.Thread):
         self.getReply()
 
     def listChannelUsers(self):
-        channelName: str = input("Channel Name: ") 
+        channelName: str = codes.getLabel("Channel Name: ") 
         request: bytes = codes.pack([codes.LIST_CHANNEL_USERS, channelName])
         self.sendQueue.put(request, block=True, timeout=WAIT_INTERVAL)
 
@@ -253,8 +242,23 @@ class Interface(threading.Thread):
         self.getReply()
 
     def setName(self):
-        newName: str = input("New Name: ") 
+        newName: str = codes.getLabel("New Name: ") 
         request: bytes = codes.pack([codes.SET_NAME, newName])
         self.sendQueue.put(request, block=True, timeout=WAIT_INTERVAL)
 
         self.getReply()
+
+    def emptyInbox(self):
+            messageCount: int = 0
+            while True:
+                messageTokens = None
+                try:
+                    messageTokens = self.inbox.get_nowait()
+                except queue.Empty:
+                    break
+                else:
+                    assert messageTokens[0] == codes.INBOX
+                    print(messageTokens[1])
+                    messageCount += 1
+            if messageCount == 0:
+                    print("Inbox is empty.\n")

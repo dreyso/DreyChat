@@ -19,7 +19,7 @@ while True:
 # Signal threads to close
 server.closeServer()
 interface.stop()
-quit
+
 # Wait for threads to join
 server.join()
 interface.join()

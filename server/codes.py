@@ -1,5 +1,6 @@
 import struct
 from typing import Dict, Any, List, Optional, Tuple
+import re
 
 ERROR = 0   # Type length string
 SUCCESS = 1
@@ -52,3 +53,11 @@ def pack(tokens: List)-> bytes:
             message += struct.pack(f'!I{len(encodedString)}s', len(encodedString), encodedString)
 
         return message
+
+
+def isValidName(string: str) -> bool:
+    if len(string) > 25:
+        return False
+    
+    pattern = r'^[a-zA-Z0-9_.]+(?: [a-zA-Z0-9_.]+)*$'
+    return re.match(pattern, string) is not None
