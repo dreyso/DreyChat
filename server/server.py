@@ -4,6 +4,8 @@ import select
 import queue
 from typing import Dict, Any, List, Optional, Tuple
 
+BUFFER = 1024
+
 class Server(threading.Thread):
     
     # Start up server thread
@@ -66,7 +68,7 @@ class Server(threading.Thread):
             # Read message from socket, catch forcible disconnections
             message = None
             try:
-                message = iSocket.recv(1024)
+                message = iSocket.recv(BUFFER)
             except:
                 self.closeSocket(iSocket)
                 continue
@@ -74,7 +76,6 @@ class Server(threading.Thread):
             # Put incoming data on queue
             if message:
                 self.recieveQueue.put((id(iSocket), message))
-                #print("recvd")
 
             # Closed connections send empty messages
             else:

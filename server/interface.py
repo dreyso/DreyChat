@@ -3,6 +3,8 @@ import threading
 import codes
 from typing import Dict, Any, List, Optional, Tuple
 
+CHECK_THREAD_TIME = 3
+
 class Interface(threading.Thread):
     def __init__(self, recvQueue: queue.Queue, sendQueues: Dict[int, queue.Queue], sendQueuesLock: threading.Lock, removeQueue: queue.Queue):
         threading.Thread.__init__(self)
@@ -32,8 +34,15 @@ class Interface(threading.Thread):
     # Run thread    
     def run(self) -> None:
         while not self._closing.is_set():
-            while not self.recvQueue.empty():
-                id, message = self.recvQueue.get()
+            try:
+                id, message = self.recvQueue.get(block=True, timeout=CHECK_THREAD_TIME)
+            except queue.Empty:
+                continue
+            else:
+                # Ensure that message is correct length
+                if not codes.isMessageValid(message):
+                    self.sendQueues[id].put(codes.pack([codes.ERROR, "Request ignored, message too long.\n"]))
+                    continue
                 self.processRequest(id, message)
 
     def stop(self):

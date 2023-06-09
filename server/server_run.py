@@ -13,7 +13,7 @@ interface = Interface(server.recieveQueue, server.sendQueues, server.sendQueuesL
 
 while True:
     print("[0] Quit\n")
-    if (input('[]<-') == "quit"):
+    if (input('[]<-') == "0"):
         break
         
 # Signal threads to close

@@ -12,13 +12,13 @@ PORT = 65432  # The port used by the server
 recvQueue = queue.Queue()
 sendQueue = queue.Queue()
 
-# Modules
 client = Client(HOST, PORT, sendQueue, recvQueue)
-interface = Interface(sendQueue, recvQueue)
 
 if client.connect() == False:
     print('Failed to connect to server.')
 else:
+    interface = Interface(sendQueue, recvQueue)
+
     while client.is_alive():
         print("[0] Quit")
         interface.displayMenu()
@@ -28,9 +28,12 @@ else:
         # Users wants to quit, or server shutdown
         if userInput == '0' or not client.is_alive():
             break
-
-        interface.choose(userInput)
-
+        try:
+            interface.choose(userInput)
+        except queue.Empty:
+            print("Error: connection timed out")
+            break
+            
     # Signal threads to close
     client.disconnect()
     interface.stop()

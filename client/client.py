@@ -3,6 +3,8 @@ import threading
 import select
 import queue
 
+BUFFER = 1024
+
 class Client(threading.Thread):
     
     # Start up client thread
@@ -26,7 +28,6 @@ class Client(threading.Thread):
             self.clientSocket.connect((self.HOST, self.PORT))
         # socket.error is thrown when the server is offline
         except socket.error as err:
-            #print(str(err))
             return False
         
         self.clientSocket.setblocking(False)
@@ -42,7 +43,7 @@ class Client(threading.Thread):
     def read(self) -> bool:
         
         # Read message from socket
-        message = self.clientSocket.recv(1024)
+        message = self.clientSocket.recv(BUFFER)
 
         # Closed connections send empty messages
         if not message:
@@ -80,6 +81,10 @@ class Client(threading.Thread):
             # Catch abrupt disconnections
             except OSError as err: 
                 print("Error: connection abruptly closed")
+                break
+             # Catch all other errors
+            except: 
+                print("Error: Unknown")
                 break
 
             # User decided to quit

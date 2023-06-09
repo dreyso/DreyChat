@@ -142,6 +142,9 @@ class Interface(threading.Thread):
         name: str = codes.getLabel("Username: ") 
         message: str = input("Message: ")  
         request: bytes = codes.pack([codes.MESSAGE_USER, name, message])
+        if not codes.isMessageValid(request):
+            print("Unable to send request, too long.\n")
+            return
         self.sendQueue.put(request, block=True, timeout=WAIT_INTERVAL)
 
         self.getReply()
@@ -149,6 +152,9 @@ class Interface(threading.Thread):
     def messageMyChannels(self):
         message: str = input("Message: ")  
         request: bytes = codes.pack([codes.MESSAGE_MY_CHANNELS, message])
+        if not codes.isMessageValid(request):
+            print("Unable to send request, too long.\n")
+            return
         self.sendQueue.put(request, block=True, timeout=WAIT_INTERVAL)
 
         self.getReply()
@@ -166,6 +172,9 @@ class Interface(threading.Thread):
         
         reqTokens.append(input("Message: "))
         request = codes.pack(reqTokens)
+        if not codes.isMessageValid(request):
+            print("Unable to send request, too long.\n")
+            return
         self.sendQueue.put(request, block=True, timeout=WAIT_INTERVAL)
 
         self.getReply()

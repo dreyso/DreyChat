@@ -18,6 +18,8 @@ LIST_MY_CHANNELS = 12   # Type
 LIST_CHANNEL_USERS = 13  # Type
 LIST_USERS = 14  # Type 
 
+MAX_MESSAGE_SIZE = 1024
+
 def extractInt(request: bytes)-> Tuple[int, bytes]:
         intSize = struct.calcsize("!I")
         (num,), remainingBytes = struct.unpack("!I", request[:intSize]), request[intSize:]
@@ -61,3 +63,22 @@ def isValidName(string: str) -> bool:
     
     pattern = r'^[a-zA-Z0-9_.]+(?: [a-zA-Z0-9_.]+)*$'
     return re.match(pattern, string) is not None
+
+def getLabel(prompt: str) -> str:
+        label: str = input(prompt)
+        
+        while not isValidName(label):  
+                label = input("Try again, " + prompt)
+
+        return label
+
+def getLabels(prompt: str) -> str:
+        label: str = input(prompt)
+        
+        while not isValidName(label) and label != "":  
+                label = input("Try again, " + prompt)
+
+        return label
+
+def isMessageValid(message: bytes) -> bool:
+       return len(message) <= MAX_MESSAGE_SIZE
